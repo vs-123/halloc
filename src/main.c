@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define POOL_SIZE 4096
 
 typedef struct block_t block_t;
@@ -104,7 +105,7 @@ void *hrealloc(void *hptr, size_t new_size)
 
    void *new_hptr = halloc(new_size);
    if (new_hptr != NULL) {
-      memcpy(new_hptr, hptr, blk->size);
+      memcpy(new_hptr, hptr, MIN(blk->size, new_size));
       hfree(hptr);
    }
 
