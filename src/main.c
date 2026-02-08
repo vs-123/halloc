@@ -40,6 +40,8 @@ void *halloc(size_t size) {
       }
       crntblk = crntblk->next;
    }
+
+   return NULL;
 }
 
 int main(void)
