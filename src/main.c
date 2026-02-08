@@ -26,7 +26,7 @@ void *halloc(size_t size) {
 
    if (is_first_alloc) {
       block_t *start_block = (block_t*)pool;
-      start_block->size = POOL_SIZE - sizeof(start_block);
+      start_block->size = POOL_SIZE - sizeof(block_t);
       start_block->is_free = true;
       start_block->next = NULL;
       free_list = start_block;
@@ -35,6 +35,7 @@ void *halloc(size_t size) {
    block_t *crntblk = free_list;
    while (crntblk) {
       if (crntblk->is_free && crntblk->size >= size) {
+         crntblk->is_free = false;
          return (void*)(crntblk + 1);
       }
       crntblk = crntblk->next;
