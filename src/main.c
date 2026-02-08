@@ -46,19 +46,22 @@ void *halloc(size_t size)
    block_t *crntblk = free_list;
    while (crntblk) {
       if (crntblk->is_free && crntblk->size >= size) {
-         /* cast to u8* to move byte by byte lol */
-         block_t *newblk = (block_t *)((uint8_t *)(crntblk + 1) + size);
+         size_t required_for_split = size + align(sizeof(block_t)) + 8;
 
-         newblk->size    = crntblk->size - size - align(sizeof(block_t));
-         newblk->is_free = true;
-         newblk->next    = crntblk->next;
+         if (crntblk->size >= required_for_split) {
+            /* cast to u8* to move byte by byte lol */
+            block_t *newblk = (block_t *)((uint8_t *)(crntblk + 1) + size);
 
-         crntblk->size = size;
-         crntblk->next = newblk;
+            newblk->size    = crntblk->size - size - align(sizeof(block_t));
+            newblk->is_free = true;
+            newblk->next    = crntblk->next;
+
+            crntblk->size = size;
+            crntblk->next = newblk;
+         }
+         crntblk->is_free = false;
+         return (void *)(crntblk + 1);
       }
-
-      crntblk->is_free = false;
-      return (void *)(crntblk + 1);
    }
 
    return NULL;
