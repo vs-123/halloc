@@ -34,6 +34,7 @@ size_t align(size_t x)
 void *halloc(size_t size);
 void *hrealloc(void *hptr, size_t new_size);
 void hmerge(void);
+void hsplit(block_t *blk, size_t size);
 void hfree(void *hptr);
 
 #define hmalloc(size) halloc(size)
@@ -58,20 +59,7 @@ void *halloc(size_t size)
       block_t *crntblk = free_list;
       while (crntblk) {
          if (crntblk->is_free && crntblk->size >= size) {
-            size_t required_for_split = size + header_size + 8;
-
-            if (crntblk->size >= required_for_split) {
-               /* cast to u8* to move byte by byte lol */
-               /*block_t *newblk = (block_t *)((uint8_t *)(crntblk + 1) + size);*/
-               block_t *newblk = (block_t *)((uint8_t *)crntblk + header_size + size);
-
-               newblk->size    = crntblk->size - size - header_size;
-               newblk->is_free = true;
-               newblk->next    = crntblk->next;
-
-               crntblk->size = size;
-               crntblk->next = newblk;
-            }
+            hsplit(crntblk, size);
             crntblk->is_free = false;
             return (void *)((uint8_t *)crntblk + header_size);
          }
@@ -101,19 +89,7 @@ void *hrealloc(void *hptr, size_t new_size)
    new_size                 = align(new_size);
 
    if (new_size <= blk->size) {
-      size_t required_for_split = new_size + header_size + 8;
-
-      if (blk->size >= required_for_split) {
-         block_t *newblk = (block_t *)((uint8_t *)blk + header_size + new_size);
-
-         newblk->size    = blk->size - new_size - header_size;
-         newblk->is_free = true;
-         newblk->next    = blk->next;
-
-         blk->size = new_size;
-         blk->next = newblk;
-      }
-
+      hsplit(blk, new_size);
       return hptr;
    }
 
@@ -121,18 +97,7 @@ void *hrealloc(void *hptr, size_t new_size)
       blk->size += header_size + blk->next->size;
       blk->next = blk->next->next;
 
-      size_t required_for_split = new_size + header_size + 8;
-
-      if (blk->size >= required_for_split) {
-         block_t *newblk = (block_t *)((uint8_t *)blk + header_size + new_size);
-
-         newblk->size    = blk->size - new_size - header_size;
-         newblk->is_free = true;
-         newblk->next    = blk->next;
-
-         blk->size = new_size;
-         blk->next = newblk;
-      }
+      hsplit(blk, new_size);
 
       return hptr;
    }
@@ -156,6 +121,23 @@ void hmerge(void)
       } else {
          crnt = crnt->next;
       }
+   }
+}
+
+void hsplit(block_t *blk, size_t size)
+{
+   const size_t header_size = align(sizeof(block_t));
+   size_t required_for_split = size + header_size + 8;
+
+   if (blk->size >= required_for_split) {
+      block_t *newblk = (block_t *)((uint8_t *)blk + header_size + size);
+
+      newblk->size    = blk->size - size - header_size;
+      newblk->is_free = true;
+      newblk->next    = blk->next;
+
+      blk->size = size;
+      blk->next = newblk;
    }
 }
 
