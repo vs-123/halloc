@@ -22,13 +22,15 @@ static union {
 
 #define pool (pool_storage.bytes)
 
-#define align(x) ((x + 7) & ~7)
+#define align(x) (((x) + 7) & ~7)
 /*
 size_t align(size_t x)
 {
    return (x + 7) & ~7;
 }
 */
+
+void hmerge(void);
 
 void *halloc(size_t size)
 {
@@ -43,37 +45,58 @@ void *halloc(size_t size)
       free_list            = start_block;
    }
 
-   block_t *crntblk = free_list;
-   while (crntblk) {
-      if (crntblk->is_free && crntblk->size >= size) {
-         size_t required_for_split = size + align(sizeof(block_t)) + 8;
+   /* retry allocation twice */
+   /* allocate once normally, and once after merging */
+   for (uint8_t i = 0; i < 2; i++) {
+      block_t *crntblk = free_list;
+      while (crntblk) {
+         if (crntblk->is_free && crntblk->size >= size) {
+            size_t required_for_split = size + align(sizeof(block_t)) + 8;
 
-         if (crntblk->size >= required_for_split) {
-            /* cast to u8* to move byte by byte lol */
-            block_t *newblk = (block_t *)((uint8_t *)(crntblk + 1) + size);
+            if (crntblk->size >= required_for_split) {
+               /* cast to u8* to move byte by byte lol */
+               block_t *newblk = (block_t *)((uint8_t *)(crntblk + 1) + size);
 
-            newblk->size    = crntblk->size - size - align(sizeof(block_t));
-            newblk->is_free = true;
-            newblk->next    = crntblk->next;
+               newblk->size    = crntblk->size - size - align(sizeof(block_t));
+               newblk->is_free = true;
+               newblk->next    = crntblk->next;
 
-            crntblk->size = size;
-            crntblk->next = newblk;
+               crntblk->size = size;
+               crntblk->next = newblk;
+            }
+            crntblk->is_free = false;
+            return (void *)(crntblk + 1);
          }
-         crntblk->is_free = false;
-         return (void *)(crntblk + 1);
       }
-      crntblk = crntblk->next;
+
+      if (i == 0) {
+         hmerge();
+      }
    }
 
    return NULL;
 }
 
-void hfree(void *hptr) {
+void hmerge(void)
+{
+   block_t *crnt = free_list;
+   while (crnt && crnt->next) {
+      if (crnt->is_free && crnt->next->is_free) {
+         crnt->size += align(sizeof(block_t)) + crnt->next->size;
+         crnt->next = crnt->next->next;
+      } else {
+         crnt = crnt->next;
+      }
+   }
+}
+
+void hfree(void *hptr)
+{
    if (hptr == NULL) {
       return;
    }
 
-   block_t *block = (block_t*)hptr - 1;
+   block_t *block = (block_t *)((uint8_t *)hptr - align(sizeof(block_t)));
    block->is_free = true;
 }
 
