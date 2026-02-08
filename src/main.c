@@ -34,6 +34,7 @@ size_t align(size_t x)
 
 void *halloc(size_t size);
 void *hrealloc(void *hptr, size_t new_size);
+void handle_first_alloc();
 void hmerge(void);
 void hsplit(block_t *blk, size_t size);
 void hfree(void *hptr);
@@ -43,15 +44,7 @@ void hfree(void *hptr);
 void *halloc(size_t size)
 {
    size                = align(size);
-   bool is_first_alloc = (free_list == NULL);
-
-   if (is_first_alloc) {
-      block_t *start_block = (block_t *)pool;
-      start_block->size    = POOL_SIZE - align(sizeof(block_t));
-      start_block->is_free = true;
-      start_block->next    = NULL;
-      free_list            = start_block;
-   }
+   handle_first_alloc();
 
    /* retry allocation twice */
    /* allocate once normally, and once after merging */
@@ -111,6 +104,18 @@ void *hrealloc(void *hptr, size_t new_size)
 
    return new_hptr;
 } /* hrealloc */
+
+void handle_first_alloc() {
+   bool is_first_alloc = (free_list == NULL);
+
+   if (is_first_alloc) {
+      block_t *start_block = (block_t *)pool;
+      start_block->size    = POOL_SIZE - align(sizeof(block_t));
+      start_block->is_free = true;
+      start_block->next    = NULL;
+      free_list            = start_block;
+   }
+}
 
 void hmerge(void)
 {
