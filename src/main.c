@@ -67,6 +67,15 @@ void *halloc(size_t size)
    return NULL;
 }
 
+void hfree(void *hptr) {
+   if (hptr == NULL) {
+      return;
+   }
+
+   block_t *block = (block_t*)hptr - 1;
+   block->is_free = true;
+}
+
 int main(void)
 {
    printf("hello, world!\n");
