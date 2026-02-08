@@ -96,13 +96,12 @@ void *hrealloc(void *hptr, size_t new_size)
       return NULL;
    }
 
-   block_t *blk = (block_t *)hptr;
-   new_size     = align(new_size);
-
    const size_t header_size = align(sizeof(block_t));
+   block_t *blk             = (block_t *)((uint8_t *)hptr - header_size);
+   new_size                 = align(new_size);
 
-   if (new_size < blk->size) {
-      size_t required_for_split = blk->size + header_size + 8;
+   if (new_size <= blk->size) {
+      size_t required_for_split = new_size + header_size + 8;
 
       if (blk->size >= required_for_split) {
          block_t *newblk = (block_t *)((uint8_t *)blk + header_size + new_size);
@@ -115,44 +114,34 @@ void *hrealloc(void *hptr, size_t new_size)
          blk->next = newblk;
       }
 
-      blk->is_free = false;
-      return (void *)((uint8_t *)blk + header_size);
-   }
-
-   if (new_size == blk->size) {
       return hptr;
    }
 
-   if (new_size > blk->size) {
-      if (blk->next != NULL && blk->next->is_free && (blk->size + header_size + blk->next->size) >= new_size) {
-         blk->size += header_size + blk->next->size;
-         blk->next = blk->next->next;
+   if (blk->next != NULL && blk->next->is_free && (blk->size + header_size + blk->next->size) >= new_size) {
+      blk->size += header_size + blk->next->size;
+      blk->next = blk->next->next;
 
-         size_t required_for_split = blk->size + header_size + 8;
+      size_t required_for_split = new_size + header_size + 8;
 
-         if (blk->size >= required_for_split) {
-            block_t *newblk = (block_t *)((uint8_t *)blk + header_size + new_size);
+      if (blk->size >= required_for_split) {
+         block_t *newblk = (block_t *)((uint8_t *)blk + header_size + new_size);
 
-            newblk->size    = blk->size - new_size - header_size;
-            newblk->is_free = true;
-            newblk->next    = blk->next;
+         newblk->size    = blk->size - new_size - header_size;
+         newblk->is_free = true;
+         newblk->next    = blk->next;
 
-            blk->size = new_size;
-            blk->next = newblk;
-         }
-
-         blk->is_free = false;
-
-         return ptr;
+         blk->size = new_size;
+         blk->next = newblk;
       }
 
-      void *new_ptr = halloc(new_size);
-      memcpy(new_ptr, ptr, blk->size);
-      hfree(ptr);
-      return new_ptr;
+      return hptr;
    }
 
-   return NULL;
+   void *new_hptr = halloc(new_size);
+   memcpy(new_hptr, hptr, blk->size);
+   hfree(ptr);
+
+   return new_hptr;
 } /* hrealloc */
 
 void hmerge(void)
