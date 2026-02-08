@@ -67,7 +67,7 @@ void *halloc(size_t size)
                crntblk->next = newblk;
             }
             crntblk->is_free = false;
-            return (void *)((uint8_t*)crntblk + align(header_size));
+            return (void *)((uint8_t*)crntblk + header_size);
          }
          crntblk = crntblk->next;
       }
