@@ -138,8 +138,10 @@ void *hrealloc(void *hptr, size_t new_size)
    }
 
    void *new_hptr = halloc(new_size);
-   memcpy(new_hptr, hptr, blk->size);
-   hfree(ptr);
+   if (new_hptr != NULL) {
+      memcpy(new_hptr, hptr, blk->size);
+      hfree(hptr);
+   }
 
    return new_hptr;
 } /* hrealloc */
