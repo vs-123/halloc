@@ -62,6 +62,7 @@ void *halloc(size_t size)
          crntblk->is_free = false;
          return (void *)(crntblk + 1);
       }
+      crntblk = crntblk->next;
    }
 
    return NULL;
