@@ -1,0 +1,7 @@
+BasedOnStyle: WebKit
+IndentWidth: 3
+InsertBraces: true
+
+AllowShortFunctionsOnASingleLine: false
+AlignConsecutiveAssignments: Consecutive
+PointerAlignment: Right
