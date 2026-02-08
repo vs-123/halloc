@@ -47,6 +47,7 @@ void *halloc(size_t size)
 
    /* retry allocation twice */
    /* allocate once normally, and once after merging */
+   const size_t header_size = align(sizeof(block_t));
    for (uint8_t i = 0; i < 2; i++) {
       block_t *crntblk = free_list;
       while (crntblk) {
@@ -55,7 +56,8 @@ void *halloc(size_t size)
 
             if (crntblk->size >= required_for_split) {
                /* cast to u8* to move byte by byte lol */
-               block_t *newblk = (block_t *)((uint8_t *)(crntblk + 1) + size);
+               /*block_t *newblk = (block_t *)((uint8_t *)(crntblk + 1) + size);*/
+               block_t *newblk = (block_t *)((uint8_t *)crntblk + header_size + size);
 
                newblk->size    = crntblk->size - size - align(sizeof(block_t));
                newblk->is_free = true;
@@ -65,7 +67,7 @@ void *halloc(size_t size)
                crntblk->next = newblk;
             }
             crntblk->is_free = false;
-            return (void *)(crntblk + 1);
+            return (void *)((uint8_t*)crntblk + align(header_size));
          }
          crntblk = crntblk->next;
       }
