@@ -12,10 +12,17 @@ Just `#include "halloc.h"`, it's that easy!
 int main(void)
 {
    int *arr = halloc(16 * sizeof(int));
-   /* ... */
-   *arr = hrealloc(arr, 32 * sizeof(int));
-   /* ... */
+
+   void *tmp = hrealloc(arr, 32 * sizeof(int));
+   if (tmp != NULL) {
+      arr = tmp;
+   }
+
+   double *arr2 = hcalloc(16, sizeof(double));
+   printf("first element --> %f\n", arr2[0]);
+
    hfree(arr);
+   hfree(arr2);
 }
 ```
 
