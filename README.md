@@ -15,7 +15,7 @@ A dead-simple heap allocator. More precisely, this is a general-purpose explicit
 
 In order to maintain thread safety, the current implementation utilises a global `pthread_mutex_t` and provides wrapper functions like ordinary `halloc()`, `hrealloc()`, `hcalloc()`, etc. and its `_unlocked` variants. The ordinary ones essentially lock + call the `_unlocked` variant + unlock the mutex.
 
-Eeven though this provides heap integrity, this approach also introduces lock contention. Basically when you have a high-concurrency environment, this global lock behaves like a single laned bridge. When you call `halloc()`, it's gonna lock the mutex and hence keep the rest of the CPU cores spinning, essentially wasting CPU cycles. Technically speaking, `pthread_mutex_lock` actually puts the thread to sleep, not spinning, it's good for power but no good for latency.
+Even though this provides heap integrity, this approach also introduces lock contention. Basically when you have a high-concurrency environment, this global lock behaves like a single laned bridge. When you call `halloc()`, it's gonna lock the mutex and hence keep the rest of the CPU cores spinning, essentially wasting CPU cycles. Technically speaking, `pthread_mutex_lock` actually puts the thread to sleep, not spinning, it's good for power but no good for latency.
 
 Honestly at first, I did consider writing a TLS-based implementation, but that would require me to use compiler-specific features like `__thread` or `__declspec(thread)` or move to C11. 
 
