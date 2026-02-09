@@ -7,6 +7,7 @@ A dead-simple heap allocator. More precisely, this is a general-purpose explicit
 Just `#include "halloc.h"`, it's that easy!
 
 ```c
+#include <stdio.h>
 #include "halloc.h"
 
 int main(void)
