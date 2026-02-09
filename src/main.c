@@ -204,25 +204,25 @@ int main(void)
    printf("=== HALLOC ===\n");
    void *x = halloc(128);
    void *y = halloc(128);
-   hdump(); /* alloc 128; alloc 128; free rest; */
+   hdump();
 
    printf("=== HFREE ===\n");
    hfree(x);
    hfree(y);
-   hdump(); /* free 128; free 128; free rest;  no merge */
+   hdump();
 
    printf("=== HMERGE ===\n");
-   /* this is pretty large for it to occur on first pass */
-   /* it's gonna be forecd to hmerge() */
+   /* this is pretty large for it to allocate on first pass */
+   /* it's gonna be forced to hmerge() */
    void *z = halloc(3072);
-   hdump(); /* alloc 3072; free rest;  merged */
+   hdump();
 
    printf("=== HREALLOC ===\n");
    z = hrealloc(z, 512);
-   hdump(); /* alloc 512; approx. 2560 free; free rest */
+   hdump();
 
    z = hrealloc(z, 1024);
-   hdump(); /* it's gonna merge with the next free block */
+   hdump();
 
    return 0;
 }
