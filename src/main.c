@@ -4,9 +4,13 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <pthread.h>
+
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define POOL_SIZE 4096
 #define SPLIT_MIN_PAYLOAD 8
+
+static pthread_mutex_t halloc_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct block_t block_t;
 
@@ -37,14 +41,51 @@ void *halloc(size_t size);
 void *hrealloc(void *hptr, size_t new_size);
 void *hcalloc(size_t len, size_t size);
 void hfree(void *hptr);
+void hdump(void);
+
+void *halloc_unlocked(size_t size);
+void *hrealloc_unlocked(void *hptr, size_t new_size);
+void *hcalloc_unlocked(size_t len, size_t size);
+void hfree_unlocked(void *hptr);
+void hdump_unlocked(void);
+
 void handle_first_alloc(void);
 void hmerge(void);
 void hsplit(block_t *blk, size_t size);
-void hdump(void);
 
 #define hmalloc(size) halloc(size)
 
-void *halloc(size_t size)
+void *halloc(size_t size) {
+   pthread_mutex_lock(&halloc_mtx);
+   void *thing = halloc_unlocked(size);
+   pthread_mutex_unlock(&halloc_mtx);
+
+   return thing;
+}
+
+void *hrealloc(void *hptr, size_t new_size) {
+   pthread_mutex_lock(&halloc_mtx);
+   void *thing = hrealloc_unlocked(hptr, new_size);
+   pthread_mutex_unlock(&halloc_mtx);
+
+   return thing;
+}
+
+void *hcalloc(size_t len, size_t size) {
+   pthread_mutex_lock(&halloc_mtx);
+   void *thing = hcalloc_unlocked(len, size);
+   pthread_mutex_unlock(&halloc_mtx);
+
+   return thing;
+}
+
+void hfree(void *hptr) {
+   pthread_mutex_lock(&halloc_mtx);
+   hfree_unlocked(hptr);
+   pthread_mutex_unlock(&halloc_mtx);
+}
+
+void *halloc_unlocked(size_t size)
 {
    size = align(size);
    handle_first_alloc();
@@ -71,13 +112,13 @@ void *halloc(size_t size)
    return NULL;
 } /* halloc */
 
-void *hrealloc(void *hptr, size_t new_size)
+void *hrealloc_unlocked(void *hptr, size_t new_size)
 {
    if (hptr == NULL) {
-      return halloc(new_size);
+      return halloc_unlocked(new_size);
    }
    if (new_size == 0) {
-      hfree(hptr);
+      hfree_unlocked(hptr);
       return NULL;
    }
 
@@ -99,16 +140,16 @@ void *hrealloc(void *hptr, size_t new_size)
       return hptr;
    }
 
-   void *new_hptr = halloc(new_size);
+   void *new_hptr = halloc_unlocked(new_size);
    if (new_hptr != NULL) {
       memcpy(new_hptr, hptr, MIN(blk->size, new_size));
-      hfree(hptr);
+      hfree_unlocked(hptr);
    }
 
    return new_hptr;
 } /* hrealloc */
 
-void *hcalloc(size_t len, size_t size)
+void *hcalloc_unlocked(size_t len, size_t size)
 {
    size_t total = len * size;
 
@@ -116,7 +157,7 @@ void *hcalloc(size_t len, size_t size)
       return NULL;
    }
 
-   void *hptr = halloc(total);
+   void *hptr = halloc_unlocked(total);
 
    if (hptr) {
       memset(hptr, 0, total);
@@ -125,7 +166,7 @@ void *hcalloc(size_t len, size_t size)
    return hptr;
 }
 
-void hfree(void *hptr)
+void hfree_unlocked(void *hptr)
 {
    if (hptr == NULL) {
       return;
@@ -180,6 +221,12 @@ void hsplit(block_t *blk, size_t size)
 
 void hdump(void)
 {
+   pthread_mutex_lock(&halloc_mtx);
+   hdump_unlocked();
+   pthread_mutex_unlock(&halloc_mtx);
+}
+
+void hdump_unlocked(void) {
    printf("#################\n");
    printf("#  HALLOC DUMP  #\n");
    printf("#################\n");
