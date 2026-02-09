@@ -6,6 +6,7 @@
 
 #define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #define POOL_SIZE 4096
+#define SPLIT_MIN_PAYLOAD 8
 
 typedef struct block_t block_t;
 
@@ -163,7 +164,7 @@ void hmerge(void)
 void hsplit(block_t *blk, size_t size)
 {
    const size_t header_size  = align(sizeof(block_t));
-   size_t required_for_split = size + header_size + 8;
+   size_t required_for_split = size + header_size + SPLIT_MIN_PAYLOAD;
 
    if (blk->size >= required_for_split) {
       block_t *newblk = (block_t *)((uint8_t *)blk + header_size + size);
