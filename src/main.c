@@ -34,6 +34,7 @@ size_t align(size_t x)
 
 void *halloc(size_t size);
 void *hrealloc(void *hptr, size_t new_size);
+void *hcalloc(size_t len, size_t size);
 void hfree(void *hptr);
 void handle_first_alloc(void);
 void hmerge(void);
@@ -105,6 +106,17 @@ void *hrealloc(void *hptr, size_t new_size)
 
    return new_hptr;
 } /* hrealloc */
+
+void *hcalloc(size_t len, size_t size) {
+   size_t total = len * size;
+   void *hptr = halloc(total);
+
+   if (hptr) {
+      memset(hptr, 0, total);
+   }
+
+   return hptr;
+}
 
 void hfree(void *hptr)
 {
