@@ -45,7 +45,7 @@ void hdump(void);
 
 void *halloc(size_t size)
 {
-   size                = align(size);
+   size = align(size);
    handle_first_alloc();
 
    /* retry allocation twice */
@@ -107,8 +107,14 @@ void *hrealloc(void *hptr, size_t new_size)
    return new_hptr;
 } /* hrealloc */
 
-void *hcalloc(size_t len, size_t size) {
+void *hcalloc(size_t len, size_t size)
+{
    size_t total = len * size;
+
+   if (len != 0 && total / len != size) {
+      return NULL;
+   }
+
    void *hptr = halloc(total);
 
    if (hptr) {
@@ -128,7 +134,8 @@ void hfree(void *hptr)
    block->is_free = true;
 }
 
-void handle_first_alloc(void) {
+void handle_first_alloc(void)
+{
    bool is_first_alloc = (free_list == NULL);
 
    if (is_first_alloc) {
@@ -155,7 +162,7 @@ void hmerge(void)
 
 void hsplit(block_t *blk, size_t size)
 {
-   const size_t header_size = align(sizeof(block_t));
+   const size_t header_size  = align(sizeof(block_t));
    size_t required_for_split = size + header_size + 8;
 
    if (blk->size >= required_for_split) {
@@ -170,19 +177,20 @@ void hsplit(block_t *blk, size_t size)
    }
 }
 
-void hdump(void) {
+void hdump(void)
+{
    printf("#################\n");
    printf("#  HALLOC DUMP  #\n");
    printf("#################\n");
    printf("\n");
-   block_t *blk = (block_t*)pool;
+   block_t *blk = (block_t *)pool;
 
    size_t i = 0;
    while (blk != NULL) {
-      printf("** BLOCK [%zu] @ PTR ADDR %p\n", i, (void*)blk);
+      printf("** BLOCK [%zu] @ PTR ADDR %p\n", i, (void *)blk);
       printf("      SIZE   -- %zu\n", blk->size);
       printf("      STATUS -- %s\n", blk->is_free ? "FREE" : "ALLOCATED");
-      printf("      NEXT   -- %p\n", (void*)blk->next);
+      printf("      NEXT   -- %p\n", (void *)blk->next);
       blk = blk->next;
       i++;
    }
@@ -195,25 +203,25 @@ int main(void)
    printf("=== HALLOC ===\n");
    void *x = halloc(128);
    void *y = halloc(128);
-   hdump();  /* alloc 128; alloc 128; free rest; */
+   hdump(); /* alloc 128; alloc 128; free rest; */
 
    printf("=== HFREE ===\n");
    hfree(x);
    hfree(y);
-   hdump();  /* free 128; free 128; free rest;  no merge */
+   hdump(); /* free 128; free 128; free rest;  no merge */
 
    printf("=== HMERGE ===\n");
    /* this is pretty large for it to occur on first pass */
    /* it's gonna be forecd to hmerge() */
-   void *z = halloc(3072); 
-   hdump();  /* alloc 3072; free rest;  merged */
+   void *z = halloc(3072);
+   hdump(); /* alloc 3072; free rest;  merged */
 
    printf("=== HREALLOC ===\n");
    z = hrealloc(z, 512);
-   hdump();  /* alloc 512; approx. 2560 free; free rest */
+   hdump(); /* alloc 512; approx. 2560 free; free rest */
 
    z = hrealloc(z, 1024);
-   hdump();  /* it's gonna merge with the next free block */
+   hdump(); /* it's gonna merge with the next free block */
 
    return 0;
 }
