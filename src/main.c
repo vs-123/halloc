@@ -34,10 +34,11 @@ size_t align(size_t x)
 
 void *halloc(size_t size);
 void *hrealloc(void *hptr, size_t new_size);
-void handle_first_alloc();
+void hfree(void *hptr);
+void handle_first_alloc(void);
 void hmerge(void);
 void hsplit(block_t *blk, size_t size);
-void hfree(void *hptr);
+void hdump(void);
 
 #define hmalloc(size) halloc(size)
 
@@ -105,7 +106,17 @@ void *hrealloc(void *hptr, size_t new_size)
    return new_hptr;
 } /* hrealloc */
 
-void handle_first_alloc() {
+void hfree(void *hptr)
+{
+   if (hptr == NULL) {
+      return;
+   }
+
+   block_t *block = (block_t *)((uint8_t *)hptr - align(sizeof(block_t)));
+   block->is_free = true;
+}
+
+void handle_first_alloc(void) {
    bool is_first_alloc = (free_list == NULL);
 
    if (is_first_alloc) {
@@ -147,19 +158,33 @@ void hsplit(block_t *blk, size_t size)
    }
 }
 
-void hfree(void *hptr)
-{
-   if (hptr == NULL) {
-      return;
+void hdump(void) {
+   printf("#################\n");
+   printf("#  HALLOC DUMP  #\n");
+   printf("#################\n");
+   printf("\n");
+   block_t *blk = (block_t*)pool;
+
+   size_t i = 0;
+   while (blk != NULL) {
+      printf("** BLOCK [%zu] @ PTR ADDR %p\n", i, (void*)blk);
+      printf("      SIZE   -- %zu\n", blk->size);
+      printf("      STATUS -- %s\n", blk->is_free ? "FREE" : "ALLOCATED");
+      printf("      NEXT   -- %p\n", (void*)blk->next);
+      blk = blk->next;
+      i++;
    }
 
-   block_t *block = (block_t *)((uint8_t *)hptr - align(sizeof(block_t)));
-   block->is_free = true;
+   printf("========================\n\n");
 }
 
 int main(void)
 {
-   printf("hello, world!\n");
+   int *num = halloc(sizeof(int));
+   *num = 5;
+   hdump();
+   hfree(num);
+   hdump();
 
    return 0;
 }
