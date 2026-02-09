@@ -30,12 +30,6 @@ static union {
 #define pool (pool_storage.bytes)
 
 #define align(x) (((x) + 7) & ~7)
-/*
-size_t align(size_t x)
-{
-   return (x + 7) & ~7;
-}
-*/
 
 void *halloc(size_t size);
 void *hrealloc(void *hptr, size_t new_size);
