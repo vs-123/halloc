@@ -2,14 +2,59 @@
 
 A dead-simple heap allocator. More precisely, this is a general-purpose explicit freelist allocator.
 
+## USAGE
+
+Just `#include "halloc.h"`, it's that easy!
+
+```c
+#include "halloc.h"
+
+int main(void)
+{
+   int *arr = halloc(16 * sizeof(int));
+   /* ... */
+   *arr = hrealloc(arr, 32 * sizeof(int));
+   /* ... */
+   hfree(arr);
+}
+```
+
+For the full API, see `include/halloc.h`.
+
+## LINK INSTRUCTIONS
+
+### CMAKE METHOD
+
+You may use `FetchContent` to retrieve and use this project as a library. Just add the following to your `CMakeLists.txt`:
+```cmake
+include(FetchContent)
+
+FetchContent_Declare(
+  halloc
+  GIT_REPOSITORY https://github.com/vs-123/halloc.git
+  GIT_TAG        main
+)
+FetchContent_MakeAvailable(halloc)
+
+target_link_libraries(your_project PRIVATE halloc)
+```
+
+### MANUAL METHOD
+
+Since this project was designed with portability in mind, you can just drop-in/vendor this project directly into an existing build system without requiring CMake as follows:
+
+1. Copy `include/halloc.h` and `src/halloc.c` into your project's source tree.
+2. Append `halloc.c` to your build's source list
+3. Make sure to link `pthread`
+
 ## FEATURES
 
-- **THREAD SAFE** -- Uses locked-wrapper pattern with `pthread_mutex_t`. Provides `_unlocked` variants for each function which you are free to use
+- **THREAD SAFE** -- Uses locked-wrapper pattern with `pthread_mutex_t`. `_unlocked` variants are provided for each function for advanced use cases, such as scenarios where synchronisation is managed externally.
 - **DETERMINISTIC ALIGNMENT** -- All allocations and internal metadata are aligned with 8 bytes using bitwise operations
-- **BLOCK SPLITTING** -- Uses first-fit search with an auto-split mechanism to minimise fragmentation
-- **DEFERRED MERGING** -- `hfree()` is at O(1) thanks to deferred merging (coalesceing). Uses sweep merge only when allocator fails to find a suitable gap. 
-- **TYPE ALIGNMENT** -- The pool is implemented as a `union` so that the compiler aligns it before the first allocation even occurs
-- **INTROSPECTION** -- Provides `hdump()` that dumps block addresses, size & vacancy status
+- **SMART SPLITTING** -- Uses a first-fit search strategy with an auto-split mechanism to minimise fragmentation
+- **CONSTANT-TIME FREE** -- `hfree()` is `O(1)`. We avoid unnecessary list traversals during free operations by deferring merging (coalescing) until the allocator is under pressure.
+- **NATURAL POOL ALIGNMENT** -- The pool is implemented as a `union` so that the compiler aligns it before the first allocation even occurs
+- **HEAP INTROSPECTION** -- Provides `hdump()` that dumps block addresses, size & vacancy status
 
 ## IMPLEMENTATION DETAILS
 
