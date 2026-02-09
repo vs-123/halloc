@@ -141,7 +141,7 @@ void handle_first_alloc(void)
 
    if (is_first_alloc) {
       block_t *start_block = (block_t *)pool;
-      start_block->size    = POOL_SIZE - align(sizeof(block_t));
+      start_block->size    = (POOL_SIZE - align(sizeof(block_t))) & ~7;
       start_block->is_free = true;
       start_block->next    = NULL;
       free_list            = start_block;
