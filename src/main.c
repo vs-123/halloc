@@ -180,11 +180,28 @@ void hdump(void) {
 
 int main(void)
 {
-   int *num = halloc(sizeof(int));
-   *num = 5;
-   hdump();
-   hfree(num);
-   hdump();
+   printf("=== HALLOC ===\n");
+   void *x = halloc(128);
+   void *y = halloc(128);
+   hdump();  /* alloc 128; alloc 128; free rest; */
+
+   printf("=== HFREE ===\n");
+   hfree(x);
+   hfree(y);
+   hdump();  /* free 128; free 128; free rest;  no merge */
+
+   printf("=== HMERGE ===\n");
+   /* this is pretty large for it to occur on first pass */
+   /* it's gonna be forecd to hmerge() */
+   void *z = halloc(3072); 
+   hdump();  /* alloc 3072; free rest;  merged */
+
+   printf("=== HREALLOC ===\n");
+   z = hrealloc(z, 512);
+   hdump();  /* alloc 512; approx. 2560 free; free rest */
+
+   z = hrealloc(z, 1024);
+   hdump();  /* it's gonna merge with the next free block */
 
    return 0;
 }
