@@ -49,7 +49,8 @@ void hsplit(block_t *blk, size_t size);
 
 #define hmalloc(size) halloc(size)
 
-void *halloc(size_t size) {
+void *halloc(size_t size)
+{
    pthread_mutex_lock(&halloc_mtx);
    void *thing = halloc_unlocked(size);
    pthread_mutex_unlock(&halloc_mtx);
@@ -57,7 +58,8 @@ void *halloc(size_t size) {
    return thing;
 }
 
-void *hrealloc(void *hptr, size_t new_size) {
+void *hrealloc(void *hptr, size_t new_size)
+{
    pthread_mutex_lock(&halloc_mtx);
    void *thing = hrealloc_unlocked(hptr, new_size);
    pthread_mutex_unlock(&halloc_mtx);
@@ -65,7 +67,8 @@ void *hrealloc(void *hptr, size_t new_size) {
    return thing;
 }
 
-void *hcalloc(size_t len, size_t size) {
+void *hcalloc(size_t len, size_t size)
+{
    pthread_mutex_lock(&halloc_mtx);
    void *thing = hcalloc_unlocked(len, size);
    pthread_mutex_unlock(&halloc_mtx);
@@ -73,7 +76,8 @@ void *hcalloc(size_t len, size_t size) {
    return thing;
 }
 
-void hfree(void *hptr) {
+void hfree(void *hptr)
+{
    pthread_mutex_lock(&halloc_mtx);
    hfree_unlocked(hptr);
    pthread_mutex_unlock(&halloc_mtx);
@@ -220,7 +224,8 @@ void hdump(void)
    pthread_mutex_unlock(&halloc_mtx);
 }
 
-void hdump_unlocked(void) {
+void hdump_unlocked(void)
+{
    printf("#################\n");
    printf("#  HALLOC DUMP  #\n");
    printf("#################\n");
