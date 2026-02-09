@@ -1,6 +1,6 @@
 # HALLOC
 
-A dead-simple heap allocator. More precisely, this is a general-purpose explicit freelist allocator.
+Halloc is a dead-simple, thread-safe, general-purpose, explicit-freelist heap allocator library written in C.
 
 ## USAGE
 
